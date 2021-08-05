@@ -1,0 +1,30 @@
+plugins {
+    id 'java'
+    id 'maven-publish'
+    id 'java-library'
+}
+
+group 'com.chame.kaizolib'
+version '1.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.apache.httpcomponents.client5:httpclient5:5.1'
+    implementation 'org.apache.httpcomponents.core5:httpcore5:5.0-alpha1'
+    implementation 'org.jsoup:jsoup:1.14.1'
+    implementation 'com.googlecode.json-simple:json-simple:1.1.1'
+
+    //Logger
+    implementation 'org.apache.logging.log4j:log4j-api:2.14.1'
+}
+
+publishing {
+    publications {
+        main(MavenPublication) {
+            from components.java
+        }
+    }
+}
