@@ -18,7 +18,7 @@ public class Test {
     public static void main(String[] args) {
         Nibl nibl = new Nibl();
         List<Result> results = nibl.search("Full Metal Alchemist Brotherhood");
-        IrcClient irc = new IrcClient(results.get(1).getCommand());
+        IrcClient irc = new IrcClient(results.get(1).getCommand(), "Chame");
         try {
             DCC dcc = irc.execute();
 

@@ -2,6 +2,8 @@ package com.chame.kaizolib.irc;
 
 import com.chame.kaizolib.irc.model.DCC;
 import com.chame.kaizolib.irc.exception.NoQuickRetryException;
+import com.chame.kaizolib.irc.utils.ShuffleString;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -18,10 +20,12 @@ public class IrcClient {
     private final String version = " :KaizoLib 1.0 [" + System.getProperty("os.arch") + "]";
     private final String packCommand;
     private final String bot;
+    private final String nickname;
     private PrintWriter out;
     private Scanner in;
 
-    public IrcClient(String packCommand) {
+    public IrcClient(String packCommand, String nickname) {
+        this.nickname = nickname;
         this.packCommand = packCommand;
         this.bot = packCommand.split(" ")[0];
     }
@@ -31,9 +35,8 @@ public class IrcClient {
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new Scanner(socket.getInputStream());
 
-            //TODO generate random name consistent for machine.
-            write("NICK", "Chame2");
-            write("USER", "Chame2" + " 0 * :" + "ChameleonIVCR");
+            write("NICK", nickname);
+            write("USER", nickname + " 0 * :" + nickname + "-Kaizo!");
 
             boolean retry = false;
             boolean retryRan = false;
@@ -117,8 +120,15 @@ public class IrcClient {
         } else if (receivedMessage.contains("End of /NAMES list")) {
             write("PRIVMSG", packCommand);
             return true;
-        }
+        } else if (receivedMessage.contains("Nickname is already in use")
+                && receivedMessage.split(" ")[0].contains(":irc.rizon.io")){
 
+            String shuffledNickname = ShuffleString.shuffle(nickname);
+
+            write("NICK", shuffledNickname);
+            write("USER", shuffledNickname + " 0 * :" + shuffledNickname + "-Kaizo!");
+            return true;
+        }
         return false;
     }
 
