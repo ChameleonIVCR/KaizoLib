@@ -16,9 +16,15 @@ public class DCCDownloader {
     private int progress = 0;
     private int speedKBps = 0;
 
+    private DCCDownloadListener downloadEventListener;
+
     public DCCDownloader(DCC dcc, File downloadFile) {
         this.dcc = dcc;
         this.downloadFile = downloadFile;
+    }
+
+    public void setDCCDownloadListener(DCCDownloadListener listener){
+        downloadEventListener = listener;
     }
 
     public void stop() {
@@ -37,7 +43,7 @@ public class DCCDownloader {
         }
     }
 
-    public void start() throws UnknownHostException {
+    public void start() {
         try(Socket socket = new Socket(dcc.getIp(), dcc.getPort())){
             DataInputStream inputStream
                     = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
@@ -45,6 +51,8 @@ public class DCCDownloader {
                     = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(downloadFile)));
             //8192 buffer size
             byte[] buffer = new byte[8192];
+
+            boolean hasFiredPlay = false;
 
             int repetitions = 0;
             long downloadedLength = 0;
@@ -66,6 +74,13 @@ public class DCCDownloader {
                     progress = (int) (downloadedLength * 100 / fileLength);
                     speedKBps = (int) ((downloadedLength / downloadElapsedTime) / 1024);
 
+                    if (downloadEventListener != null) downloadEventListener.onProgress(progress, getSpeed());
+
+                    if (progress > 10 && !hasFiredPlay && downloadEventListener != null){
+                        hasFiredPlay = true;
+                        downloadEventListener.onDownloadReadyToPlay(progress, downloadFile);
+                    }
+
                     logger.debug("File Received " + progress + "% at " + speedKBps);
                     repetitions = 0;
                 }
@@ -76,14 +91,25 @@ public class DCCDownloader {
 
             progress = 100;
             logger.debug("Receive completed, file saved as " + downloadFile.getPath() + "\n");
+
+            if (downloadEventListener != null) downloadEventListener.onFinished(downloadFile);
+
             inputStream.close();
             fileOutput.close();
 
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-            throw e;
         } catch (IOException e) {
             e.printStackTrace();
+            if (downloadEventListener != null) downloadEventListener.onError(e);
         }
+    }
+
+    public interface DCCDownloadListener{
+        void onDownloadReadyToPlay(int progress, File downloadFile);
+
+        void onProgress(int progress, String speed);
+
+        void onFinished(File downloadFile);
+
+        void onError(Exception error);
     }
 }
