@@ -44,6 +44,7 @@ public class IrcClient {
             long startTime = System.currentTimeMillis();
             while (in.hasNext() || (System.currentTimeMillis()-startTime)<15000) {
                 String serverMessage = in.nextLine();
+                System.out.println(serverMessage);
 
                 //Automated responses to comply with IRC standard
                 if (mandatoryResponses(serverMessage)) {
