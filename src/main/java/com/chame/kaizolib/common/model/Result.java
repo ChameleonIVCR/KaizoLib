@@ -8,14 +8,16 @@ public class Result {
     private final String quality;
     private final String format;
     private final String command;
+    private final String rawFilename;
 
-    public Result (String bot, String pack, String size, String quality, String format, String filename) {
+    public Result (String bot, String pack, String size, String quality, String format, String filename, String rawFilename) {
         this.bot = bot;
         this.pack = pack;
         this.size = size;
         this.quality = quality;
         this.format = format;
         this.filename = filename;
+        this.rawFilename = rawFilename;
         this.command = bot + " :xdcc send #" + pack;
     }
 
@@ -46,5 +48,9 @@ public class Result {
 
     public String getFormat() {
         return format;
+    }
+
+    public String getRawFilename() {
+        return rawFilename;
     }
 }

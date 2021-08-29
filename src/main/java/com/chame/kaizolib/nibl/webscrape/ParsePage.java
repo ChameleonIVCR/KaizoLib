@@ -30,7 +30,8 @@ public class ParsePage {
                             size,
                             Utils.qualityFromFilename(filename),
                             Utils.extensionFromFilename(filename),
-                            Utils.cleanFilename(filename))
+                            Utils.cleanFilename(filename),
+                            filename)
             );
         }
 

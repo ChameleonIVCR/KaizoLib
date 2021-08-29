@@ -9,7 +9,6 @@ public class Anime {
     private final String synopsis;
     private final String imgLink;
     private final String coverImgLink;
-    private List<Episode> episodes;
 
     public Anime(int id, String title, String synopsis, String imgLink, String coverImgLink){
         this.id = id;
@@ -17,10 +16,6 @@ public class Anime {
         this.synopsis = synopsis;
         this.imgLink = imgLink;
         this.coverImgLink = coverImgLink;
-    }
-
-    public void setEpisodes(List<Episode> episodes){
-        this.episodes = episodes;
     }
 
     public int getId(){
@@ -41,17 +36,5 @@ public class Anime {
 
     public String getCoverImgLink(){
         return coverImgLink;
-    }
-
-    public List<Episode> getEpisodes(){
-        return episodes;
-    }
-
-    public Episode getEpisode(int number){
-        try {
-            return episodes.get(number + 1);
-        } catch (ArrayIndexOutOfBoundsException e){
-            return null;
-        }
     }
 }

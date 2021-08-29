@@ -21,6 +21,7 @@ public class IrcClient {
     private final String packCommand;
     private final String bot;
     private final String nickname;
+    private IrcClientListener ircClientListener;
     private PrintWriter out;
     private Scanner in;
 
@@ -30,7 +31,11 @@ public class IrcClient {
         this.bot = packCommand.split(" ")[0];
     }
 
-    public DCC execute() throws UnknownHostException, TimeoutException, NoQuickRetryException {
+    public void IrcClientListener(IrcClient.IrcClientListener listener){
+        ircClientListener = listener;
+    }
+
+    public DCC execute() {
         try (Socket socket = new Socket("irc.rizon.net", 6667)) {
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new Scanner(socket.getInputStream());
@@ -52,7 +57,9 @@ public class IrcClient {
                 } else if (serverMessage.contains(this.bot) && serverMessage.contains("\u0001DCC")) {
                     quit();
                     close();
-                    return parseResponse(serverMessage);
+                    final DCC fetchedDCC = parseResponse(serverMessage);
+                    if (ircClientListener != null ) ircClientListener.onSuccess(fetchedDCC);
+                    return fetchedDCC;
                 } else if (serverMessage.contains("You already requested that pack")
                         || serverMessage.contains("You have a DCC pending")){
                     retry = true;
@@ -78,10 +85,14 @@ public class IrcClient {
         logger.warn("The IRC connection didn't respond in time, or didn't respond at all to the request.");
         throw new TimeoutException("The IRC bot didn't respond in time, or didn't respond at all.");
 
-        } catch (UnknownHostException|TimeoutException|NoQuickRetryException e) {
-            throw e;
+        } catch (NoQuickRetryException e) {
+            if (ircClientListener != null ) ircClientListener.onFailure(FailureCode.NoQuickRetry);
+        } catch (TimeoutException e){
+            if (ircClientListener != null ) ircClientListener.onFailure(FailureCode.TimeOut);
+        } catch (UnknownHostException e) {
+            if (ircClientListener != null ) ircClientListener.onFailure(FailureCode.UnknownHost);
         } catch (IOException e) {
-            e.printStackTrace();
+            if (ircClientListener != null ) ircClientListener.onFailure(FailureCode.IoException);
             logger.fatal("Check network or filesystem permissions.");
         } finally {
             close();
@@ -154,5 +165,18 @@ public class IrcClient {
                 Integer.parseInt(msg[msg.length-2]),
                 Long.parseLong(msg[msg.length-1])
         );
+    }
+
+    public enum FailureCode{
+        TimeOut,
+        UnknownHost,
+        NoQuickRetry,
+        IoException
+    }
+
+    public interface IrcClientListener{
+        void onSuccess(DCC dcc);
+
+        void onFailure(FailureCode f);
     }
 }

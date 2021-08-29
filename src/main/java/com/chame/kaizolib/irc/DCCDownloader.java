@@ -6,7 +6,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.net.Socket;
-import java.net.UnknownHostException;
 
 public class DCCDownloader {
     private static final Logger logger = LogManager.getLogger(DCCDownloader.class);
@@ -37,7 +36,7 @@ public class DCCDownloader {
 
     public String getSpeed() {
         if (speedKBps > 1024) {
-            return (speedKBps / 1024) + " Mbps";
+            return String.format(java.util.Locale.US,"%.2f", speedKBps / 1024.0) + " Mbps";
         } else {
             return speedKBps + " Kbps";
         }
@@ -45,6 +44,7 @@ public class DCCDownloader {
 
     public void start() {
         try(Socket socket = new Socket(dcc.getIp(), dcc.getPort())){
+            socket.setReceiveBufferSize(16384);
             DataInputStream inputStream
                     = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
             DataOutputStream fileOutput

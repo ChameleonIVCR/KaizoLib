@@ -18,7 +18,7 @@ public class Test {
     public static void main(String[] args) {
         Nibl nibl = new Nibl();
         List<Result> results = nibl.search("Full Metal Alchemist Brotherhood");
-        IrcClient irc = new IrcClient(results.get(1).getCommand(), "Chame");
+        IrcClient irc = new IrcClient(results.get(0).getCommand(), "Chame");
         try {
             DCC dcc = irc.execute();
 
@@ -26,13 +26,7 @@ public class Test {
             download.createNewFile();
             DCCDownloader dccDl = new DCCDownloader(dcc, download);
             dccDl.start();
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        } catch (TimeoutException e) {
-            e.printStackTrace();
         } catch (IOException e) {
-            e.printStackTrace();
-        } catch (NoQuickRetryException e) {
             e.printStackTrace();
         }
     }
