@@ -21,7 +21,8 @@ public class IrcClient {
     private final String packCommand;
     private final String bot;
     private final String nickname;
-    private IrcClientListener ircClientListener;
+    private IrcOnSuccessListener ircClientListener;
+    private IrcOnFailureListener ircFailureListener;
     private PrintWriter out;
     private Scanner in;
 
@@ -31,8 +32,12 @@ public class IrcClient {
         this.bot = packCommand.split(" ")[0];
     }
 
-    public void IrcClientListener(IrcClient.IrcClientListener listener){
+    public void setIrcOnSuccessListener(IrcClient.IrcOnSuccessListener listener){
         ircClientListener = listener;
+    }
+
+    public void setIrcOnFailureListener(IrcClient.IrcOnFailureListener fListener) {
+        ircFailureListener = fListener;
     }
 
     public DCC execute() {
@@ -86,13 +91,13 @@ public class IrcClient {
         throw new TimeoutException("The IRC bot didn't respond in time, or didn't respond at all.");
 
         } catch (NoQuickRetryException e) {
-            if (ircClientListener != null ) ircClientListener.onFailure(FailureCode.NoQuickRetry);
+            if (ircClientListener != null ) ircFailureListener.onFailure(FailureCode.NoQuickRetry);
         } catch (TimeoutException e){
-            if (ircClientListener != null ) ircClientListener.onFailure(FailureCode.TimeOut);
+            if (ircClientListener != null ) ircFailureListener.onFailure(FailureCode.TimeOut);
         } catch (UnknownHostException e) {
-            if (ircClientListener != null ) ircClientListener.onFailure(FailureCode.UnknownHost);
+            if (ircClientListener != null ) ircFailureListener.onFailure(FailureCode.UnknownHost);
         } catch (IOException e) {
-            if (ircClientListener != null ) ircClientListener.onFailure(FailureCode.IoException);
+            if (ircClientListener != null ) ircFailureListener.onFailure(FailureCode.IoException);
             logger.fatal("Check network or filesystem permissions.");
         } finally {
             close();
@@ -174,9 +179,11 @@ public class IrcClient {
         IoException
     }
 
-    public interface IrcClientListener{
+    public interface IrcOnSuccessListener{
         void onSuccess(DCC dcc);
+    }
 
+    public interface IrcOnFailureListener{
         void onFailure(FailureCode f);
     }
 }
