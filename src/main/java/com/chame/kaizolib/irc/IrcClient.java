@@ -59,7 +59,8 @@ public class IrcClient {
                 //Automated responses to comply with IRC standard
                 if (mandatoryResponses(serverMessage)) {
                     continue;
-                } else if (serverMessage.contains(this.bot) && serverMessage.contains("\u0001DCC")) {
+                } else if (serverMessage.split(" ")[1].contains("PRIVMSG")
+                        && serverMessage.contains("\u0001DCC")) {
                     quit();
                     close();
                     final DCC fetchedDCC = parseResponse(serverMessage);
