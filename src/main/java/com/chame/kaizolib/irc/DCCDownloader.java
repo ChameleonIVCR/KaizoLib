@@ -5,7 +5,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.*;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
 
 public class DCCDownloader {
     private static final Logger logger = LogManager.getLogger(DCCDownloader.class);
@@ -43,8 +46,19 @@ public class DCCDownloader {
     }
 
     public void start() {
-        try(Socket socket = new Socket(dcc.getIp(), dcc.getPort())){
+        //try(Socket socket = new Socket(dcc.getIp(), dcc.getPort())){
+        try(Socket socket = new Socket()){
+            System.out.println(socket.getReceiveBufferSize());
             socket.setReceiveBufferSize(16384);
+            socket.setTcpNoDelay(true);
+
+            //AA
+            InetAddress addr = InetAddress.getByName(dcc.getIp());
+            SocketAddress sockaddr = new InetSocketAddress(addr, dcc.getPort());
+            socket.connect(sockaddr);
+            System.out.println(socket.getReceiveBufferSize());
+            //AA
+
             DataInputStream inputStream
                     = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
             DataOutputStream fileOutput
@@ -92,7 +106,7 @@ public class DCCDownloader {
             progress = 100;
             logger.debug("Receive completed, file saved as " + downloadFile.getPath() + "\n");
 
-            if (downloadEventListener != null) downloadEventListener.onFinished(downloadFile);
+            if (downloadEventListener != null && !stop) downloadEventListener.onFinished(downloadFile);
 
             inputStream.close();
             fileOutput.close();
