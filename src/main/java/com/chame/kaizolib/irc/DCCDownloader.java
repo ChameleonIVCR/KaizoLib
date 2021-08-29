@@ -48,8 +48,6 @@ public class DCCDownloader {
     public void start() {
         //try(Socket socket = new Socket(dcc.getIp(), dcc.getPort())){
         try(Socket socket = new Socket()){
-            System.out.println(socket.getReceiveBufferSize());
-            socket.setReceiveBufferSize(16384);
             socket.setTcpNoDelay(true);
 
             //AA
