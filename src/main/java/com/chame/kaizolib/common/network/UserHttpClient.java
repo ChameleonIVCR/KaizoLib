@@ -10,7 +10,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 
 public class UserHttpClient {
-    CloseableHttpClient httpClient;
+    private final CloseableHttpClient httpClient;
     private static final Logger logger = LogManager.getLogger(UserHttpClient.class);
 
     public UserHttpClient(){
@@ -21,13 +21,8 @@ public class UserHttpClient {
         this.httpClient = httpClient;
     }
 
-    public CloseableHttpResponse executeRequest(HttpUriRequest request){
-        try {
-            return httpClient.execute(request);
-        } catch (IOException io) {
-            io.printStackTrace();
-            return null;
-        }
+    public CloseableHttpResponse executeRequest(HttpUriRequest request) throws IOException{
+        return httpClient.execute(request);
     }
 
     public CloseableHttpClient getHttpClient(){

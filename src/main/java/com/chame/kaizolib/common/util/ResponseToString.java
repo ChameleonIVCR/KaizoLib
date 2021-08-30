@@ -11,8 +11,7 @@ public class ResponseToString {
     private static final Logger logger = LogManager.getLogger(ResponseToString.class);
 
     public static String read(CloseableHttpResponse response){
-        try {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()){
             response.getEntity().writeTo(out);
             response.close();
             return out.toString();

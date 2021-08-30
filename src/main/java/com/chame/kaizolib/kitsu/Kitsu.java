@@ -13,6 +13,7 @@ import org.apache.hc.core5.util.Timeout;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -27,6 +28,9 @@ public class Kitsu {
             .setResponseTimeout(Timeout.ofSeconds(timeoutInSeconds))
             .build();
 
+    private KitsuOnSuccess kitsuSucessListener;
+    private KitsuOnFailure kitsuFailureListener;
+
     public Kitsu(UserHttpClient client) {
         this.client = client;
     }
@@ -35,7 +39,15 @@ public class Kitsu {
         client = new UserHttpClient();
     }
 
-    public Anime getAnimeByTitle(String animeTitle) {
+    public void setKitsuFailureListener(KitsuOnFailure kitsuFailureListener) {
+        this.kitsuFailureListener = kitsuFailureListener;
+    }
+
+    public void setKitsuSucessListener(KitsuOnSuccess kitsuSucessListener) {
+        this.kitsuSucessListener = kitsuSucessListener;
+    }
+
+    public void getAnimeByTitle(String animeTitle) {
         animeTitle = animeTitle.replaceAll("\\[.*?\\]","")
                                .replace("_", " ")
                                .trim();
@@ -59,11 +71,19 @@ public class Kitsu {
         get.setConfig(this.timeoutRequest);
         get.addHeader("Accept","application/vnd.api+json");
         get.addHeader("Content-Type","application/vnd.api+json");
-        CloseableHttpResponse response = client.executeRequest(get);
+
+        CloseableHttpResponse response = null;
+        try {
+            response = client.executeRequest(get);
+        } catch (IOException e) {
+            if (kitsuFailureListener != null) kitsuFailureListener.onFailure();
+            return;
+        }
 
         final String responseContent = ResponseToString.read(response);
         if (responseContent == null) {
-            return new Anime(-1, animeTitle, null, null, null);
+            if (kitsuFailureListener != null) kitsuFailureListener.onFailure();
+            return;
         }
 
         int statusCode = response.getCode();
@@ -72,17 +92,17 @@ public class Kitsu {
             case 200:
                 Anime animeResult = ParseJsonAnime.parse(responseContent);
                 if (animeResult == null){
-                    return new Anime(-1, animeTitle, null, null, null);
-                } else {
-                    return animeResult;
+                    if (kitsuFailureListener != null) kitsuFailureListener.onFailure();
+                    return;
                 }
+                if (kitsuFailureListener != null) kitsuSucessListener.onSuccess(animeResult);
             default:
                 logger.warn("Couldn't connect to Kitsu, or the request was denied when fetching Anime by title.");
-                return new Anime(-1, animeTitle, null, null, null);
+                if (kitsuFailureListener != null) kitsuFailureListener.onFailure();
         }
     }
 
-    public Anime getAnimeById(int id) {
+    public void getAnimeById(int id) {
         URI queryUrl = null;
         try {
             queryUrl = new URIBuilder()
@@ -100,21 +120,43 @@ public class Kitsu {
         get.setConfig(this.timeoutRequest);
         get.addHeader("Accept","application/vnd.api+json");
         get.addHeader("Content-Type","application/vnd.api+json");
-        CloseableHttpResponse response = client.executeRequest(get);
+
+        CloseableHttpResponse response = null;
+        try {
+            response = client.executeRequest(get);
+        } catch (IOException e) {
+            if (kitsuFailureListener != null) kitsuFailureListener.onFailure();
+            return;
+        }
 
         final String responseContent = ResponseToString.read(response);
-        if (responseContent == null){
-            return new Anime(id, "Unknown", null, null, null);
+
+        if (responseContent == null) {
+            if (kitsuFailureListener != null) kitsuFailureListener.onFailure();
+            return;
         }
 
         int statusCode = response.getCode();
         switch(statusCode) {
             case 304:
             case 200:
-                return ParseJsonAnime.parse(responseContent);
+                Anime animeResult = ParseJsonAnime.parse(responseContent);
+                if (animeResult == null){
+                    if (kitsuFailureListener != null) kitsuFailureListener.onFailure();
+                    return;
+                }
+                if (kitsuFailureListener != null) kitsuSucessListener.onSuccess(animeResult);
             default:
                 logger.warn("Couldn't connect to Kitsu, or the request was denied when fetching Anime by id.");
-                return new Anime(id, "Unknown", null, null, null);
+                if (kitsuFailureListener != null) kitsuFailureListener.onFailure();
         }
+    }
+
+    public interface KitsuOnSuccess{
+        void onSuccess(Anime anime);
+    }
+
+    public interface KitsuOnFailure{
+        void onFailure();
     }
 }

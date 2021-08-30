@@ -17,8 +17,23 @@ import java.util.concurrent.TimeoutException;
 public class Test {
     public static void main(String[] args) {
         Nibl nibl = new Nibl();
-        List<Result> results = nibl.search("Full Metal Alchemist Brotherhood");
-        IrcClient irc = new IrcClient(results.get(0).getCommand(), "Chame");
+        nibl.setNiblSuccessListener(new Nibl.NiblSuccessListener() {
+            @Override
+            public void onSuccess(List<Result> result) {
+                search(result);
+            }
+
+            @Override
+            public void onNoResults() {
+
+            }
+        });
+        nibl.search("Full Metal Alchemist Brotherhood");
+
+    }
+
+    private static void search(List<Result> result){
+        IrcClient irc = new IrcClient(result.get(0).getCommand(), "Chame");
         try {
             DCC dcc = irc.execute();
 

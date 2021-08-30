@@ -13,6 +13,7 @@ import org.apache.hc.core5.util.Timeout;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -30,6 +31,10 @@ public class Nibl {
 
     private final UserHttpClient client;
 
+    private NiblSuccessListener niblSuccessListener;
+    private NiblFailureListener niblFailureListener;
+
+    //Use this whenever possible.
     public Nibl(UserHttpClient client) {
         this.client = client;
     }
@@ -39,11 +44,20 @@ public class Nibl {
         client = new UserHttpClient();
     }
 
+    //Convenience class, but don't rely on this.
     public UserHttpClient getUserHttpClient() {
         return client;
     }
 
-    public List<Result> getLatest() {
+    public void setNiblFailureListener(NiblFailureListener niblFailureListener) {
+        this.niblFailureListener = niblFailureListener;
+    }
+
+    public void setNiblSuccessListener(NiblSuccessListener niblSuccessListener) {
+        this.niblSuccessListener = niblSuccessListener;
+    }
+
+    public void getLatest() {
         URI queryUrl = null;
         URIBuilder builder = new URIBuilder()
                             .setScheme("https")
@@ -60,25 +74,34 @@ public class Nibl {
         get.setConfig(timeoutRequest);
         get.addHeader("User-Agent", header);
 
-        CloseableHttpResponse response = client.executeRequest(get);
-
-        final String responseContent = ResponseToString.read(response);
-        if (responseContent == null){
-            return null;
+        CloseableHttpResponse response = null;
+        try {
+            response = client.executeRequest(get);
+        } catch (IOException e) {
+            if (niblFailureListener !=null) niblFailureListener.onFailure(FailureCode.NoConnection);
+            return;
         }
 
         int statusCode = response.getCode();
+        final String responseContent = ResponseToString.read(response);
+
+        //.contains will block for a big search.
+        if (responseContent == null || responseContent.contains("No results")){
+            if (niblSuccessListener != null) niblSuccessListener.onNoResults();
+            return;
+        }
+
         switch(statusCode) {
             case 304:
             case 200:
-                return ParsePage.parse(responseContent);
+                if (niblSuccessListener != null) niblSuccessListener.onSuccess(ParsePage.parse(responseContent));
             default:
                 logger.warn("Couldn't connect to Nibl, or the request was denied when fetching latest animes.");
-                return null;
+                if (niblSuccessListener != null) niblSuccessListener.onNoResults();
         }
     }
 
-    public List<Result> search(String search) {
+    public void search(String search) {
         URI queryUrl = null;
         URIBuilder builder = new URIBuilder()
                 .setScheme("https")
@@ -97,21 +120,44 @@ public class Nibl {
         get.setConfig(timeoutRequest);
         get.addHeader("User-Agent", header);
 
-        CloseableHttpResponse response = client.executeRequest(get);
-
-        final String responseContent = ResponseToString.read(response);
-        if (responseContent == null){
-            return null;
+        CloseableHttpResponse response = null;
+        try {
+            response = client.executeRequest(get);
+        } catch (IOException e) {
+            if (niblFailureListener !=null) niblFailureListener.onFailure(FailureCode.NoConnection);
+            return;
         }
 
         int statusCode = response.getCode();
+        final String responseContent = ResponseToString.read(response);
+
+        if (responseContent == null || responseContent.contains("No results")){
+            if (niblSuccessListener != null) niblSuccessListener.onNoResults();
+            return;
+        }
+
         switch(statusCode) {
             case 304:
             case 200:
-                return ParsePage.parse(responseContent);
+                if (niblSuccessListener != null) niblSuccessListener.onSuccess(ParsePage.parse(responseContent));
             default:
                 logger.warn("Couldn't connect to Nibl, or the request was denied when fetching latest animes.");
-                return null;
+                if (niblSuccessListener != null) niblSuccessListener.onNoResults();
         }
+    }
+
+    public enum FailureCode{
+        PeerInternalError,
+        NoConnection
+    }
+
+    public interface NiblSuccessListener{
+        void onSuccess(List<Result> result);
+
+        void onNoResults();
+    }
+
+    public interface NiblFailureListener{
+        void onFailure(FailureCode f);
     }
 }
