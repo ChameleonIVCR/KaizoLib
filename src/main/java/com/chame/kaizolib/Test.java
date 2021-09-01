@@ -5,14 +5,10 @@ import com.chame.kaizolib.irc.DCCDownloader;
 import com.chame.kaizolib.irc.IrcClient;
 import com.chame.kaizolib.irc.model.DCC;
 import com.chame.kaizolib.nibl.Nibl;
-import com.chame.kaizolib.irc.exception.NoQuickRetryException;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.util.List;
-import java.util.concurrent.TimeoutException;
-
 
 public class Test {
     public static void main(String[] args) {
@@ -22,13 +18,8 @@ public class Test {
             public void onSuccess(List<Result> result) {
                 search(result);
             }
-
-            @Override
-            public void onNoResults() {
-
-            }
         });
-        nibl.search("Full Metal Alchemist Brotherhood");
+        nibl.search("Subsplease Jujutsu Kaisen");
 
     }
 
@@ -40,6 +31,27 @@ public class Test {
             File download = new File("F:\\test\\"+dcc.getFilename());
             download.createNewFile();
             DCCDownloader dccDl = new DCCDownloader(dcc, download);
+            dccDl.setDCCDownloadListener(new DCCDownloader.DCCDownloadListener() {
+                @Override
+                public void onDownloadReadyToPlay(int progress, File downloadFile) {
+
+                }
+
+                @Override
+                public void onProgress(int progress, String speed) {
+                    System.out.println(progress+"%" + "/" + speed);
+                }
+
+                @Override
+                public void onFinished(File downloadFile) {
+
+                }
+
+                @Override
+                public void onError(Exception error) {
+
+                }
+            });
             dccDl.start();
         } catch (IOException e) {
             e.printStackTrace();

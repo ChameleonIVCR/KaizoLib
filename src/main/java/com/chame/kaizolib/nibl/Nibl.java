@@ -33,6 +33,7 @@ public class Nibl {
 
     private NiblSuccessListener niblSuccessListener;
     private NiblFailureListener niblFailureListener;
+    private NiblOnNoResultsListener niblOnNoResultsListener;
 
     //Use this whenever possible.
     public Nibl(UserHttpClient client) {
@@ -55,6 +56,10 @@ public class Nibl {
 
     public void setNiblSuccessListener(NiblSuccessListener niblSuccessListener) {
         this.niblSuccessListener = niblSuccessListener;
+    }
+
+    public void setNiblOnNoResultsListener(NiblOnNoResultsListener niblOnNoResultsListener) {
+        this.niblOnNoResultsListener = niblOnNoResultsListener;
     }
 
     public void getLatest() {
@@ -87,7 +92,7 @@ public class Nibl {
 
         //.contains will block for a big search.
         if (responseContent == null || responseContent.contains("No results")){
-            if (niblSuccessListener != null) niblSuccessListener.onNoResults();
+            if (niblOnNoResultsListener != null) niblOnNoResultsListener.onNoResults();
             return;
         }
 
@@ -97,7 +102,7 @@ public class Nibl {
                 if (niblSuccessListener != null) niblSuccessListener.onSuccess(ParsePage.parse(responseContent));
             default:
                 logger.warn("Couldn't connect to Nibl, or the request was denied when fetching latest animes.");
-                if (niblSuccessListener != null) niblSuccessListener.onNoResults();
+                if (niblOnNoResultsListener != null) niblOnNoResultsListener.onNoResults();
         }
     }
 
@@ -132,7 +137,7 @@ public class Nibl {
         final String responseContent = ResponseToString.read(response);
 
         if (responseContent == null || responseContent.contains("No results")){
-            if (niblSuccessListener != null) niblSuccessListener.onNoResults();
+            if (niblOnNoResultsListener != null) niblOnNoResultsListener.onNoResults();
             return;
         }
 
@@ -142,7 +147,7 @@ public class Nibl {
                 if (niblSuccessListener != null) niblSuccessListener.onSuccess(ParsePage.parse(responseContent));
             default:
                 logger.warn("Couldn't connect to Nibl, or the request was denied when fetching latest animes.");
-                if (niblSuccessListener != null) niblSuccessListener.onNoResults();
+                if (niblOnNoResultsListener != null) niblOnNoResultsListener.onNoResults();
         }
     }
 
@@ -153,7 +158,9 @@ public class Nibl {
 
     public interface NiblSuccessListener{
         void onSuccess(List<Result> result);
+    }
 
+    public interface NiblOnNoResultsListener{
         void onNoResults();
     }
 
